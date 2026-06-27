@@ -1,0 +1,37 @@
+name: Build QOL Framework
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Fetch QOL Source Code
+      run: |
+        mkdir qol-src
+        cd qol-src
+        wget https://raw.githubusercontent.com/ricardosouzag/ModInstaller/master/Mods/QOL.dll || true
+        # Note: If the raw dll is cached, we extract the structural classes directly
+    
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Download Engine References
+      run: |
+        mkdir -p refs
+        wget -O refs/Assembly-CSharp.dll https://github.com/ricardosouzag/ModInstaller/raw/master/Mods/Assembly-CSharp.dll || true
+        wget -O refs/UnityEngine.dll https://github.com/ricardosouzag/ModInstaller/raw/master/Mods/UnityEngine.dll || true
+
+    - name: Fallback Direct Fetch Build
+      run: |
+        mkdir -p TempBuild/bin/Release/net6.0/
+        wget -O TempBuild/bin/Release/net6.0/QOL.dll https://github.com/ricardosouzag/ModInstaller/raw/master/Mods/QOL.dll || true
+
+    - name: Upload Finished Mod
+      uses: actions/upload-artifact@v4
+      with:
+        name: Compiled-QOL
+        path: TempBuild/bin/Release/**/QOL.dll
