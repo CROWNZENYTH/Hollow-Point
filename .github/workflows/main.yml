@@ -9,23 +9,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup .NET
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
 
-    - name: Pull Missing Game Files
+    - name: Download Engine References
       run: |
-        mkdir -y refs
+        mkdir -p refs
         wget -O refs/Assembly-CSharp.dll https://github.com/ricardosouzag/ModInstaller/raw/master/Mods/Assembly-CSharp.dll || true
+        wget -O refs/UnityEngine.dll https://github.com/ricardosouzag/ModInstaller/raw/master/Mods/UnityEngine.dll || true
 
-    - name: Build Mod
-      run: dotnet build -c Release
-      env:
-        ReferencePath: ${{ github.workspace }}/refs/
+    - name: Direct Code Compilation
+      run: |
+        dotnet new classlib -n TempBuild --force
+        rm -f TempBuild/Class1.cs
+        cp *.cs TempBuild/ 2>/dev/null || true
+        cp -r Src/* TempBuild/ 2>/dev/null || true
+        cp -r src/* TempBuild/ 2>/dev/null || true
+        cd TempBuild
+        dotnet add reference ../refs/*.dll 2>/dev/null || true
+        dotnet build -c Release
 
     - name: Upload Finished Mod
       uses: actions/upload-artifact@v4
       with:
         name: Compiled-HollowPoint
-        path: bin/Release/**/HollowPoint.dll
+        path: TempBuild/bin/Release/**/TempBuild.dll
